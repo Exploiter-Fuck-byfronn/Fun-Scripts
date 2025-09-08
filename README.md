@@ -340,3 +340,4 @@ showKeySystem(createMainGUI)
 
 
 -- The script is this :3 hope you enjoy
+ -- COPY THE SCRIPT MANUALLY OR ELSE IT WON'T WORK...
