@@ -1,13 +1,29 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
 local LocalPlayer = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
 local OWNER_ID = 12958136
 
+-- Blur effect
+local function enableBlur()
+    if not Lighting:FindFirstChild("FunScriptsBlur") then
+        local blur = Instance.new("BlurEffect")
+        blur.Name = "FunScriptsBlur"
+        blur.Size = 20
+        blur.Parent = Lighting
+    end
+end
+local function disableBlur()
+    local blur = Lighting:FindFirstChild("FunScriptsBlur")
+    if blur then blur:Destroy() end
+end
+
 local function showKeySystem(callback)
     if LocalPlayer.UserId == OWNER_ID then
+        enableBlur()
         callback()
         return
     end
@@ -19,7 +35,7 @@ local function showKeySystem(callback)
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(0,400,0,150)
     frame.Position = UDim2.new(0.5,-200,0.4,-75)
-    frame.BackgroundColor3 = Color3.fromRGB(25,25,25) -- darker
+    frame.BackgroundColor3 = Color3.fromRGB(15,15,15) -- darker
     frame.BorderSizePixel = 0
     frame.Parent = gui
     local corner = Instance.new("UICorner")
@@ -30,10 +46,10 @@ local function showKeySystem(callback)
     label.Size = UDim2.new(1,-20,0,50)
     label.Position = UDim2.new(0,10,0,10)
     label.Text = "Visit https://loot-link.com/s?u4GYwvtK for the key"
-    label.TextColor3 = Color3.fromRGB(220,220,220)
+    label.TextColor3 = Color3.fromRGB(230,230,230)
     label.BackgroundTransparency = 1
     label.TextScaled = true
-    label.Font = Enum.Font.GothamBold -- modern font
+    label.Font = Enum.Font.GothamBold
     label.Parent = frame
 
     local keyBox = Instance.new("TextBox")
@@ -41,7 +57,7 @@ local function showKeySystem(callback)
     keyBox.Position = UDim2.new(0,10,0,70)
     keyBox.PlaceholderText = "Enter key here..."
     keyBox.Text = ""
-    keyBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    keyBox.BackgroundColor3 = Color3.fromRGB(25,25,25) -- darker input
     keyBox.TextColor3 = Color3.fromRGB(255,255,255)
     keyBox.ClearTextOnFocus = false
     keyBox.Font = Enum.Font.Gotham
@@ -55,7 +71,7 @@ local function showKeySystem(callback)
     unlockButton.Size = UDim2.new(0,120,0,35)
     unlockButton.Position = UDim2.new(0.5,-60,1,-45)
     unlockButton.Text = "Unlock"
-    unlockButton.BackgroundColor3 = Color3.fromRGB(55,95,200) -- blue button
+    unlockButton.BackgroundColor3 = Color3.fromRGB(45,80,160) -- darker blue
     unlockButton.TextColor3 = Color3.fromRGB(255,255,255)
     unlockButton.Font = Enum.Font.GothamBold
     unlockButton.TextScaled = true
@@ -67,6 +83,7 @@ local function showKeySystem(callback)
     unlockButton.MouseButton1Click:Connect(function()
         if keyBox.Text == "143214Q5gT4K" then
             gui:Destroy()
+            enableBlur()
             callback()
         else
             keyBox.Text = ""
@@ -114,7 +131,7 @@ local function createMainGUI()
     local window = Instance.new("Frame")
     window.Size = UDim2.new(0, 600, 0, 350)
     window.Position = UDim2.new(0.5,-300,0.5,-175)
-    window.BackgroundColor3 = Color3.fromRGB(20,20,20) -- darker background
+    window.BackgroundColor3 = Color3.fromRGB(10,10,10) -- darkest
     window.BorderSizePixel = 0
     window.Parent = gui
     local windowCorner = Instance.new("UICorner")
@@ -129,7 +146,7 @@ local function createMainGUI()
     title.Text="Fun Scripts"
     title.TextColor3=Color3.fromRGB(255,255,255)
     title.TextScaled=true
-    title.Font=Enum.Font.GothamBold -- better font
+    title.Font=Enum.Font.GothamBold
     title.Parent=window
 
     local tabNames = {"Main","Teleport","Movement"}
@@ -144,9 +161,9 @@ local function createMainGUI()
         for _,v in pairs(tabs) do
             v.Frame.Visible = (v.Name==name)
             if v.Name==name then
-                v.Button.BackgroundColor3=Color3.fromRGB(70,120,230) -- active tab
+                v.Button.BackgroundColor3=Color3.fromRGB(60,100,200) -- active
             else
-                v.Button.BackgroundColor3=Color3.fromRGB(45,45,45) -- inactive
+                v.Button.BackgroundColor3=Color3.fromRGB(25,25,25) -- dark inactive
             end
         end
     end
@@ -156,7 +173,7 @@ local function createMainGUI()
         btn.Size = UDim2.new(1/#tabNames-0.01,-5,1,0)
         btn.Position = UDim2.new((i-1)/#tabNames,2,0,0)
         btn.Text = name
-        btn.BackgroundColor3 = Color3.fromRGB(45,45,45) -- inactive default
+        btn.BackgroundColor3 = Color3.fromRGB(25,25,25)
         btn.TextColor3 = Color3.fromRGB(255,255,255)
         btn.Font = Enum.Font.Gotham
         btn.TextScaled = true
@@ -182,7 +199,7 @@ local function createMainGUI()
         btn.Size = UDim2.new(1,-20,0,40)
         btn.Position = UDim2.new(0,10,0,posY)
         btn.Text=text
-        btn.BackgroundColor3 = Color3.fromRGB(55,95,200) -- modern blue button
+        btn.BackgroundColor3 = Color3.fromRGB(45,80,160) -- darker blue
         btn.TextColor3 = Color3.fromRGB(255,255,255)
         btn.Font = Enum.Font.Gotham
         btn.TextScaled=true
@@ -191,12 +208,12 @@ local function createMainGUI()
         corner.CornerRadius=UDim.new(0,8)
         corner.Parent=btn
         btn.MouseEnter:Connect(function() btn.BackgroundColor3=Color3.fromRGB(70,120,230) end)
-        btn.MouseLeave:Connect(function() btn.BackgroundColor3=Color3.fromRGB(55,95,200) end)
+        btn.MouseLeave:Connect(function() btn.BackgroundColor3=Color3.fromRGB(45,80,160) end)
         btn.MouseButton1Click:Connect(callback)
     end
 
-    -- Keep your fly/teleport/movement code here (unchanged)
+    -- add your fly/teleport/movement logic here (unchanged)
+
 end
 
 showKeySystem(createMainGUI)
-
