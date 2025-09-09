@@ -1,5 +1,5 @@
 local p,s,u,l,c=game:GetService("Players"),game:GetService("RunService"),game:GetService("UserInputService"),game.Players.LocalPlayer,workspace.CurrentCamera,game:GetService("Lighting")
-local o=12958136
+local o=129581399
 local k="143214Q5gT4K"
 local function f(g)if l.UserId==o then g() return end;local G=Instance.new("ScreenGui")G.Name="KeySystemGUI"G.Parent=l:WaitForChild("PlayerGui")local F=Instance.new("Frame")F.Size=UDim2.new(0,400,0,150)F.Position=UDim2.new(0.5,-200,0.4,-75)F.BackgroundColor3=Color3.fromRGB(35,35,35)F.BorderSizePixel=0 F.Parent=G;Instance.new("UICorner",F).CornerRadius=UDim.new(0,15)local L=Instance.new("TextLabel",F)L.Size=UDim2.new(1,-20,0,50)L.Position=UDim2.new(0,10,0,10)L.Text="Visit https://loot-link.com/s?u4GYwvtK for the key"L.TextColor3=Color3.fromRGB(255,255,255)L.BackgroundTransparency=1 L.TextScaled=true L.Font=Enum.Font.GothamBold
 local Kb=Instance.new("TextBox",F)Kb.Size=UDim2.new(1,-20,0,40)Kb.Position=UDim2.new(0,10,0,70)Kb.PlaceholderText="Enter key here..."Kb.BackgroundColor3=Color3.fromRGB(55,55,55)Kb.TextColor3=Color3.fromRGB(255,255,255)Kb.ClearTextOnFocus=false Kb.Font=Enum.Font.Gotham Kb.TextScaled=true Instance.new("UICorner",Kb).CornerRadius=UDim.new(0,8)
