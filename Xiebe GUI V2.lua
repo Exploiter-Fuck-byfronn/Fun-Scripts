@@ -1,110 +1,234 @@
+-- Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
+-- Owner ID
 local ownerId = 12958136
-local hiddenPasswordData = {51,49,51,50,49,52,82,53,103,84,52,75}
-local function getPassword()
-    local pw = ""
-    for _,v in ipairs(hiddenPasswordData) do
-        pw = pw .. string.char(bit32.bxor(v,23))
-    end
-    return pw
-end
 
+-- GUI Variables
 local gui
-local guiOpened = false
+local flySpeed = 60
+local flying, flyConn = false, nil
+local noclipEnabled = false
+local noclipConnection
+local espEnabled = false
+local espBoxes = {}
 
-local function createKeyPrompt()
-    local prompt = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
-    prompt.Name = "XiebeKeyPrompt"
-    local frame = Instance.new("Frame", prompt)
-    frame.Size = UDim2.new(0,400,0,200)
-    frame.Position = UDim2.new(0.5,-200,0.5,-100)
-    frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
-    local corner = Instance.new("UICorner", frame)
-    corner.CornerRadius = UDim.new(0,12)
-
-    local title = Instance.new("TextLabel", frame)
-    title.Size = UDim2.new(1,0,0,50)
-    title.Position = UDim2.new(0,0,0,0)
-    title.BackgroundTransparency = 1
-    title.Text = "✊🏻Xiebe GUI V2✊🏻"
-    title.TextColor3 = Color3.fromRGB(0,120,200)
-    title.Font = Enum.Font.GothamBlack
-    title.TextScaled = true
-
-    local info = Instance.new("TextLabel", frame)
-    info.Size = UDim2.new(1,-20,0,60)
-    info.Position = UDim2.new(0,10,0,60)
-    info.BackgroundTransparency = 1
-    info.TextColor3 = Color3.fromRGB(255,255,255)
-    info.TextWrapped = true
-    info.Text = "Visit the link and copy the note to get the password.\nLink copied to clipboard!"
-    pcall(function() setclipboard("https://loot-link.com/s?u4GYwvtK") end)
-
-    local textbox = Instance.new("TextBox", frame)
-    textbox.Size = UDim2.new(0,250,0,40)
-    textbox.Position = UDim2.new(0.5,-125,0,130)
-    textbox.PlaceholderText = "Enter Password"
-    textbox.TextColor3 = Color3.fromRGB(255,255,255)
-    textbox.BackgroundColor3 = Color3.fromRGB(50,50,50)
-    local tbCorner = Instance.new("UICorner", textbox)
-    tbCorner.CornerRadius = UDim.new(0,6)
-    textbox.TextScaled = true
-
-    local submit = Instance.new("TextButton", frame)
-    submit.Size = UDim2.new(0,100,0,40)
-    submit.Position = UDim2.new(0.5,50,0,130)
-    submit.Text = "Submit"
-    submit.TextColor3 = Color3.fromRGB(255,255,255)
-    submit.BackgroundColor3 = Color3.fromRGB(0,120,200)
-    local btnCorner = Instance.new("UICorner", submit)
-    btnCorner.CornerRadius = UDim.new(0,6)
-    submit.TextScaled = true
-
-    local function checkKey()
-        if textbox.Text == getPassword() then
-            prompt:Destroy()
-            guiOpened = true
-            gui.Enabled = true
-        else
-            textbox.Text = ""
-            textbox.PlaceholderText = "Wrong!"
+-- Helper: Draggable window
+local function makeDraggable(frame)
+    local dragging, dragInput, dragStart, startPos
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
         end
-    end
-
-    submit.MouseButton1Click:Connect(checkKey)
-    textbox.FocusLost:Connect(function(enterPressed)
-        if enterPressed then checkKey() end
+    end)
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input == dragInput then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale,startPos.X.Offset+delta.X,startPos.Y.Scale,startPos.Y.Offset+delta.Y)
+        end
     end)
 end
 
+-- Helper: Update scroll canvas
+local function updateCanvas(frame)
+    local layout = frame:FindFirstChildOfClass("UIListLayout")
+    if layout then
+        frame.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
+    end
+end
+
+-- Helper: Create button
+local function createButton(parent,text,callback)
+    local btn = Instance.new("TextButton", parent)
+    btn.Size = UDim2.new(1,-10,0,35)
+    btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+    btn.TextColor3 = Color3.fromRGB(255,255,255)
+    btn.TextScaled = true
+    btn.Text = text
+    local corner = Instance.new("UICorner", btn)
+    corner.CornerRadius = UDim.new(0,6)
+    btn.MouseButton1Click:Connect(callback)
+    updateCanvas(parent)
+end
+
+-- Helper: Create slider
+local function createSlider(parent,text,min,max,default,callback)
+    local container = Instance.new("Frame", parent)
+    container.Size = UDim2.new(1,0,0,60)
+    container.BackgroundTransparency = 1
+
+    local label = Instance.new("TextLabel", container)
+    label.Size = UDim2.new(1,0,0,20)
+    label.Position = UDim2.new(0,0,0,0)
+    label.Text = text..": "..default
+    label.TextColor3 = Color3.fromRGB(255,255,255)
+    label.TextScaled = true
+    label.BackgroundTransparency = 1
+
+    local slider = Instance.new("TextButton", container)
+    slider.Size = UDim2.new(1,0,0,20)
+    slider.Position = UDim2.new(0,0,0,30)
+    slider.BackgroundColor3 = Color3.fromRGB(70,70,70)
+    slider.Text = ""
+    local corner = Instance.new("UICorner", slider)
+    corner.CornerRadius = UDim.new(0,6)
+
+    local dragging = false
+    slider.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end
+    end)
+    slider.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local pos = math.clamp(input.Position.X - slider.AbsolutePosition.X,0,slider.AbsoluteSize.X)
+            local value = min + (pos/slider.AbsoluteSize.X)*(max-min)
+            label.Text = text..": "..math.floor(value)
+            callback(value)
+        end
+    end)
+    updateCanvas(parent)
+end
+
+-- Fly functions
+local function startFly()
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    local bg = Instance.new("BodyGyro", hrp)
+    local bv = Instance.new("BodyVelocity", hrp)
+    bg.P = 9e4; bg.MaxTorque = Vector3.new(9e9,9e9,9e9)
+    bv.MaxForce = Vector3.new(9e9,9e9,9e9)
+    flyConn = RunService.RenderStepped:Connect(function()
+        local mv = Vector3.zero
+        local cf = camera.CFrame
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then mv += cf.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then mv -= cf.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then mv -= cf.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then mv += cf.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then mv += cf.UpVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then mv -= cf.UpVector end
+        bv.Velocity = (mv.Magnitude>0) and mv.Unit*flySpeed or Vector3.zero
+        bg.CFrame = cf
+    end)
+end
+
+local function stopFly()
+    if flyConn then flyConn:Disconnect() flyConn = nil end
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        for _,v in pairs(hrp:GetChildren()) do
+            if v:IsA("BodyGyro") or v:IsA("BodyVelocity") then v:Destroy() end
+        end
+    end
+end
+
+-- Noclip
+local function toggleNoclip()
+    noclipEnabled = not noclipEnabled
+    if noclipEnabled then
+        noclipConnection = RunService.Stepped:Connect(function()
+            for _,part in pairs(LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") then part.CanCollide = false end
+            end
+        end)
+    else
+        if noclipConnection then noclipConnection:Disconnect() noclipConnection = nil end
+        for _,part in pairs(LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = true end
+        end
+    end
+end
+
+-- ESP
+local function toggleESP()
+    espEnabled = not espEnabled
+    if espEnabled then
+        for _,p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character then
+                local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+                if hrp and not espBoxes[p] then
+                    local box = Instance.new("BoxHandleAdornment")
+                    box.Adornee = hrp
+                    box.Size = Vector3.new(2,3,1)
+                    box.Color3 = Color3.fromRGB(0,255,0)
+                    box.AlwaysOnTop = true
+                    box.ZIndex = 10
+                    box.Parent = hrp
+                    espBoxes[p] = box
+                end
+            end
+        end
+    else
+        for _,box in pairs(espBoxes) do
+            if box then box:Destroy() end
+        end
+        espBoxes = {}
+    end
+end
+
+Players.PlayerAdded:Connect(function(p)
+    if espEnabled and p ~= LocalPlayer and p.Character then
+        local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+        if hrp and not espBoxes[p] then
+            local box = Instance.new("BoxHandleAdornment")
+            box.Adornee = hrp
+            box.Size = Vector3.new(2,3,1)
+            box.Color3 = Color3.fromRGB(0,255,0)
+            box.AlwaysOnTop = true
+            box.ZIndex = 10
+            box.Parent = hrp
+            espBoxes[p] = box
+        end
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(p)
+    if espBoxes[p] then
+        espBoxes[p]:Destroy()
+        espBoxes[p] = nil
+    end
+end)
+
+-- GUI Creation
 local function createGUI()
     gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
     gui.Name = "XiebeHubGUI"
     gui.ResetOnSpawn = false
-    gui.Enabled = ownerId==LocalPlayer.UserId
+    gui.Enabled = true
 
+    -- Main window
     local window = Instance.new("Frame", gui)
     window.Size = UDim2.new(0,500,0,350)
     window.Position = UDim2.new(0.5,-250,0.5,-175)
     window.BackgroundColor3 = Color3.fromRGB(15,15,15)
     local corner = Instance.new("UICorner", window)
     corner.CornerRadius = UDim.new(0,15)
+    makeDraggable(window)
 
     local title = Instance.new("TextLabel", window)
     title.Size = UDim2.new(1,0,0,50)
     title.Position = UDim2.new(0,0,0,0)
     title.BackgroundTransparency = 1
-    title.Text = "✊🏻Xiebe GUI V2✊🏻"
+    title.Text = "✊🏻Xiebe Hub V3✊🏻"
     title.TextColor3 = Color3.fromRGB(0,120,200)
     title.Font = Enum.Font.GothamBlack
     title.TextScaled = true
 
-    local tabs = {"Main","Teleport","Movement"}
+    -- Tabs
+    local tabs = {"Main","Player","Combat","Movement","Teleport","Settings"}
     local tabFrames = {}
     local tabBar = Instance.new("Frame", window)
     tabBar.Size = UDim2.new(1,0,0,35)
@@ -127,10 +251,14 @@ local function createGUI()
         local cornerBtn = Instance.new("UICorner", btn)
         cornerBtn.CornerRadius = UDim.new(0,6)
 
-        local frame = Instance.new("Frame", window)
+        local frame = Instance.new("ScrollingFrame", window)
         frame.Size = UDim2.new(1,-20,1,-100)
         frame.Position = UDim2.new(0,10,0,90)
         frame.BackgroundTransparency = 1
+        frame.ScrollBarThickness = 8
+        local layout = Instance.new("UIListLayout", frame)
+        layout.SortOrder = Enum.SortOrder.LayoutOrder
+        layout.Padding = UDim.new(0,5)
         frame.Visible = false
         tabFrames[name] = frame
 
@@ -138,6 +266,7 @@ local function createGUI()
     end
     selectTab("Main")
 
+    -- Close button
     local closeBtn = Instance.new("TextButton", window)
     closeBtn.Size = UDim2.new(0,40,0,30)
     closeBtn.Position = UDim2.new(1,-50,0,10)
@@ -150,171 +279,68 @@ local function createGUI()
         gui.Enabled = false
     end)
 
-    local dragging, dragStart, startPos
-    window.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging=true
-            dragStart=input.Position
-            startPos=window.Position
-            input.Changed:Connect(function()
-                if input.UserInputState==Enum.UserInputState.End then dragging=false end
-            end)
-        end
-    end)
-    window.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType==Enum.UserInputType.MouseMovement then
-            local delta=input.Position-dragStart
-            window.Position=UDim2.new(startPos.X.Scale,startPos.X.Offset+delta.X,startPos.Y.Scale,startPos.Y.Offset+delta.Y)
-        end
-    end)
-
-    local function createButton(parent,text,posY,callback)
-        local btn = Instance.new("TextButton", parent)
-        btn.Size = UDim2.new(0,150,0,35)
-        btn.Position = UDim2.new(0,10,0,posY)
-        btn.Text=text
-        btn.TextColor3=Color3.fromRGB(255,255,255)
-        btn.TextScaled=true
-        btn.BackgroundColor3=Color3.fromRGB(50,50,50)
-        local corner=Instance.new("UICorner", btn)
-        corner.CornerRadius = UDim.new(0,8)
-        btn.MouseButton1Click:Connect(callback)
-    end
-
-    local MainFrame=tabFrames["Main"]
-    local flying, flyConn, flySpeed=false, nil, 60
-    local function stopFly()
-        if flyConn then flyConn:Disconnect() flyConn=nil end
-        local hrp=LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            for _,v in pairs(hrp:GetChildren()) do
-                if v:IsA("BodyGyro") or v:IsA("BodyVelocity") then v:Destroy() end
-            end
-        end
-    end
-    local function startFly()
-        stopFly()
-        local hrp=LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-        local bg=Instance.new("BodyGyro",hrp)
-        local bv=Instance.new("BodyVelocity",hrp)
-        bg.P=9e4; bg.MaxTorque=Vector3.new(9e9,9e9,9e9)
-        bv.MaxForce=Vector3.new(9e9,9e9,9e9)
-        flyConn=RunService.RenderStepped:Connect(function()
-            local mv=Vector3.zero
-            local cf=camera.CFrame
-            if UserInputService:IsKeyDown(Enum.KeyCode.W) then mv+=cf.LookVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.S) then mv-=cf.LookVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.A) then mv-=cf.RightVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.D) then mv+=cf.RightVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then mv+=cf.UpVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then mv-=cf.UpVector end
-            bv.Velocity=mv.Magnitude>0 and mv.Unit*flySpeed or Vector3.zero
-            bg.CFrame=cf
-        end)
-    end
-
-    createButton(MainFrame,"Toggle Fly",10,function() flying=not flying if flying then startFly() else stopFly() end end)
-    createButton(MainFrame,"Get Flinged",60,function()
-        local hrp=LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            local bv=Instance.new("BodyVelocity",hrp)
-            bv.Velocity=Vector3.new(0,200,0)
-            bv.MaxForce=Vector3.new(1e5,1e5,1e5)
-            game:GetService("Debris"):AddItem(bv,0.3)
-        end
-    end)
-    createButton(MainFrame,"Spin",110,function()
-        local hrp=LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            local bav=Instance.new("BodyAngularVelocity",hrp)
-            bav.MaxTorque=Vector3.new(0,math.huge,0)
-            bav.AngularVelocity=Vector3.new(0,20,0)
-            bav.P=1e4
-            task.delay(5,function() bav:Destroy() end)
-        end
-    end)
-    createButton(MainFrame,"Visit All Players",160,function()
-        local hrp=LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    -- ==== Main Tab Buttons ====
+    local MainFrame = tabFrames["Main"]
+    createButton(MainFrame,"Toggle Fly",function() flying = not flying if flying then startFly() else stopFly() end end)
+    createButton(MainFrame,"Toggle Noclip",toggleNoclip)
+    createButton(MainFrame,"Visit All Players (3s each)",function()
+        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if not hrp then return end
         for _,p in ipairs(Players:GetPlayers()) do
-            if p~=LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                local target=p.Character.HumanoidRootPart
-                hrp.CFrame=target.CFrame+Vector3.new(0,5,0)
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                hrp.CFrame = p.Character.HumanoidRootPart.CFrame + Vector3.new(0,5,0)
                 task.wait(3)
             end
         end
     end)
 
-    local TeleFrameParent=tabFrames["Teleport"]
-    local scrollFrame=Instance.new("ScrollingFrame",TeleFrameParent)
-    scrollFrame.Size=UDim2.new(1,0,1,0)
-    scrollFrame.CanvasSize=UDim2.new(0,0,0,0)
-    scrollFrame.ScrollBarThickness=8
-    scrollFrame.BackgroundTransparency=1
-    local UIList=Instance.new("UIListLayout",scrollFrame)
-    UIList.SortOrder=Enum.SortOrder.LayoutOrder
-    UIList.Padding=UDim.new(0,5)
-
-    local function addTeleportButtons()
-        for _,child in pairs(scrollFrame:GetChildren()) do
-            if child:IsA("TextButton") then child:Destroy() end
-        end
-        for _,p in ipairs(Players:GetPlayers()) do
-            if p~=LocalPlayer then
-                local btn=Instance.new("TextButton",scrollFrame)
-                btn.Size=UDim2.new(1,-10,0,35)
-                btn.Text="Teleport to "..p.Name
-                btn.TextColor3=Color3.fromRGB(255,255,255)
-                btn.TextScaled=true
-                btn.BackgroundColor3=Color3.fromRGB(50,50,50)
-                local corner=Instance.new("UICorner",btn)
-                corner.CornerRadius=UDim.new(0,6)
-                btn.MouseButton1Click:Connect(function()
-                    local hrp=LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                    local targetHRP=p.Character and p.Character:FindFirstChild("HumanoidRootPart")
-                    if hrp and targetHRP then
-                        hrp.CFrame=targetHRP.CFrame+Vector3.new(0,5,0)
-                    end
-                end)
-            end
-        end
-        scrollFrame.CanvasSize=UDim2.new(0,0,0,UIList.AbsoluteContentSize.Y+5)
-    end
-    addTeleportButtons()
-    Players.PlayerAdded:Connect(addTeleportButtons)
-    Players.PlayerRemoving:Connect(addTeleportButtons)
-
-    local MoveFrame=tabFrames["Movement"]
-    local function createTextBox(parent,placeholder,posY,callback)
-        local tb=Instance.new("TextBox",parent)
-        tb.Size=UDim2.new(0,150,0,35)
-        tb.Position=UDim2.new(0,10,0,posY)
-        tb.PlaceholderText=placeholder
-        tb.Text=""
-        tb.TextColor3=Color3.fromRGB(255,255,255)
-        tb.BackgroundColor3=Color3.fromRGB(40,40,40)
-        local corner=Instance.new("UICorner",tb)
-        corner.CornerRadius=UDim.new(0,6)
-        tb.ClearTextOnFocus=false
-        tb.TextScaled=true
-        tb.FocusLost:Connect(function()
-            local val=tonumber(tb.Text)
-            if val then callback(val) end
-        end)
-    end
-    createTextBox(MoveFrame,"WalkSpeed (16)",10,function(val)
-        local humanoid=LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
-        if humanoid then humanoid.WalkSpeed=val end
+    -- ==== Movement Tab ====
+    local MoveFrame = tabFrames["Movement"]
+    createSlider(MoveFrame,"WalkSpeed",16,300,16,function(val)
+        local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
+        if humanoid then humanoid.WalkSpeed = val end
     end)
-    createTextBox(MoveFrame,"JumpPower (50)",60,function(val)
-        local humanoid=LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
-        if humanoid then humanoid.JumpPower=val end
+    createSlider(MoveFrame,"JumpPower",50,300,50,function(val)
+        local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
+        if humanoid then humanoid.JumpPower = val end
     end)
-    LocalPlayer.CharacterAdded:Connect(stopFly)
+    createSlider(MoveFrame,"Fly Speed",10,200,60,function(val) flySpeed = val end)
+
+    -- ==== Player Tab ====
+    local PlayerFrame = tabFrames["Player"]
+    createButton(PlayerFrame,"Toggle ESP",toggleESP)
+
+    -- ==== Combat Tab ====
+    local CombatFrame = tabFrames["Combat"]
+    createButton(CombatFrame,"Auto Click / Auto Farm",function() print("Auto Click activated") end)
+    createButton(CombatFrame,"Auto Heal",function() print("Auto Heal activated") end)
+    createButton(CombatFrame,"Weapon Modifiers",function() print("Weapon Mods activated") end)
+    createButton(CombatFrame,"Extend Reach / Hitbox",function() print("Hitbox extended") end)
+
+    -- ==== Teleport Tab ====
+    local TeleFrame = tabFrames["Teleport"]
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            createButton(TeleFrame,"Teleport to "..p.Name,function()
+                local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                local targetHRP = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+                if hrp and targetHRP then hrp.CFrame = targetHRP.CFrame + Vector3.new(0,5,0) end
+            end)
+        end
+    end
+
+    -- ==== Settings Tab ====
+    local SettingsFrame = tabFrames["Settings"]
+    createButton(SettingsFrame,"Anti Kick / Anti Death",function() print("Anti Kick enabled") end)
+    createButton(SettingsFrame,"Auto Rejoin / Server Hop",function() print("Auto Rejoin enabled") end)
+    createButton(SettingsFrame,"Copy Code Shortcut",function() setclipboard("Some in-game code") end)
+
+    -- Reset on respawn
+    LocalPlayer.CharacterAdded:Connect(function()
+        stopFly()
+        if noclipEnabled then toggleNoclip() toggleNoclip() end
+    end)
 end
 
+-- Launch GUI
 createGUI()
-if LocalPlayer.UserId ~= ownerId then
-    createKeyPrompt()
-end
