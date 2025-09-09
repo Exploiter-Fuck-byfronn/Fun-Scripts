@@ -99,7 +99,7 @@ local function createGUI()
     title.Size = UDim2.new(1,0,0,50)
     title.Position = UDim2.new(0,0,0,0)
     title.BackgroundTransparency = 1
-    title.Text = "✊🏻Xiebe Hub✊🏻"
+    title.Text = "✊🏻Xiebe GUI V2✊🏻"
     title.TextColor3 = Color3.fromRGB(0,120,200)
     title.Font = Enum.Font.GothamBlack
     title.TextScaled = true
