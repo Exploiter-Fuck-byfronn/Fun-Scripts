@@ -5,7 +5,7 @@ local LocalPlayer = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 local Lighting = game:GetService("Lighting")
 
-local OWNER_ID = 12958136
+local OWNER_ID = 12958139
 local KEY = "143214Q5gT4K"
 
 local function showKeySystem(callback)
