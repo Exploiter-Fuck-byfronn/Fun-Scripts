@@ -1,11 +1,11 @@
--- Services
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
--- Owner ID
+
 local ownerId = 12958136
 
 -- GUI Variables
@@ -17,7 +17,7 @@ local noclipConnection
 local espEnabled = false
 local espBoxes = {}
 
--- Helper: Draggable window
+
 local function makeDraggable(frame)
     local dragging, dragInput, dragStart, startPos
     frame.InputBegan:Connect(function(input)
@@ -41,7 +41,6 @@ local function makeDraggable(frame)
     end)
 end
 
--- Helper: Update scroll canvas
 local function updateCanvas(frame)
     local layout = frame:FindFirstChildOfClass("UIListLayout")
     if layout then
@@ -49,7 +48,7 @@ local function updateCanvas(frame)
     end
 end
 
--- Helper: Create button
+
 local function createButton(parent,text,callback)
     local btn = Instance.new("TextButton", parent)
     btn.Size = UDim2.new(1,-10,0,35)
@@ -63,7 +62,7 @@ local function createButton(parent,text,callback)
     updateCanvas(parent)
 end
 
--- Helper: Create slider
+
 local function createSlider(parent,text,min,max,default,callback)
     local container = Instance.new("Frame", parent)
     container.Size = UDim2.new(1,0,0,60)
@@ -103,7 +102,7 @@ local function createSlider(parent,text,min,max,default,callback)
     updateCanvas(parent)
 end
 
--- Fly functions
+
 local function startFly()
     local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
@@ -135,7 +134,7 @@ local function stopFly()
     end
 end
 
--- Noclip
+
 local function toggleNoclip()
     noclipEnabled = not noclipEnabled
     if noclipEnabled then
@@ -202,7 +201,7 @@ Players.PlayerRemoving:Connect(function(p)
     end
 end)
 
--- GUI Creation
+
 local function createGUI()
     gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
     gui.Name = "XiebeHubGUI"
@@ -227,7 +226,7 @@ local function createGUI()
     title.Font = Enum.Font.GothamBlack
     title.TextScaled = true
 
-    -- Tabs
+
     local tabs = {"Main","Player","Combat","Movement","Teleport","Settings"}
     local tabFrames = {}
     local tabBar = Instance.new("Frame", window)
@@ -266,7 +265,7 @@ local function createGUI()
     end
     selectTab("Main")
 
-    -- Close button
+  
     local closeBtn = Instance.new("TextButton", window)
     closeBtn.Size = UDim2.new(0,40,0,30)
     closeBtn.Position = UDim2.new(1,-50,0,10)
@@ -279,7 +278,7 @@ local function createGUI()
         gui.Enabled = false
     end)
 
-    -- ==== Main Tab Buttons ====
+    
     local MainFrame = tabFrames["Main"]
     createButton(MainFrame,"Toggle Fly",function() flying = not flying if flying then startFly() else stopFly() end end)
     createButton(MainFrame,"Toggle Noclip",toggleNoclip)
@@ -294,7 +293,7 @@ local function createGUI()
         end
     end)
 
-    -- ==== Movement Tab ====
+   
     local MoveFrame = tabFrames["Movement"]
     createSlider(MoveFrame,"WalkSpeed",16,300,16,function(val)
         local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
@@ -306,18 +305,18 @@ local function createGUI()
     end)
     createSlider(MoveFrame,"Fly Speed",10,200,60,function(val) flySpeed = val end)
 
-    -- ==== Player Tab ====
+ 
     local PlayerFrame = tabFrames["Player"]
     createButton(PlayerFrame,"Toggle ESP",toggleESP)
 
-    -- ==== Combat Tab ====
+ 
     local CombatFrame = tabFrames["Combat"]
     createButton(CombatFrame,"Auto Click / Auto Farm",function() print("Auto Click activated") end)
     createButton(CombatFrame,"Auto Heal",function() print("Auto Heal activated") end)
     createButton(CombatFrame,"Weapon Modifiers",function() print("Weapon Mods activated") end)
     createButton(CombatFrame,"Extend Reach / Hitbox",function() print("Hitbox extended") end)
 
-    -- ==== Teleport Tab ====
+
     local TeleFrame = tabFrames["Teleport"]
     for _,p in ipairs(Players:GetPlayers()) do
         if p ~= LocalPlayer then
@@ -328,19 +327,19 @@ local function createGUI()
             end)
         end
     end
+    
 
-    -- ==== Settings Tab ====
     local SettingsFrame = tabFrames["Settings"]
     createButton(SettingsFrame,"Anti Kick / Anti Death",function() print("Anti Kick enabled") end)
     createButton(SettingsFrame,"Auto Rejoin / Server Hop",function() print("Auto Rejoin enabled") end)
     createButton(SettingsFrame,"Copy Code Shortcut",function() setclipboard("Some in-game code") end)
 
-    -- Reset on respawn
+
     LocalPlayer.CharacterAdded:Connect(function()
         stopFly()
         if noclipEnabled then toggleNoclip() toggleNoclip() end
     end)
 end
 
--- Launch GUI
+
 createGUI()
