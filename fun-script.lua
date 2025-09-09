@@ -1,18 +1,17 @@
--- Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local camera = workspace.CurrentCamera
+
 local OWNER_ID = 12958136
 
 local function showKeySystem(callback)
     if LocalPlayer.UserId == OWNER_ID then
-        callback() 
+        callback()
         return
     end
 
-    -- Key GUI
     local gui = Instance.new("ScreenGui")
     gui.Name = "KeySystemGUI"
     gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
@@ -76,8 +75,6 @@ local function showKeySystem(callback)
     end)
 end
 
-
--- ====================
 local function makeDraggable(frame)
     local dragging, dragInput, dragStart, startPos
     local function update(input)
@@ -109,17 +106,14 @@ local function makeDraggable(frame)
     end)
 end
 
--- ====================
--- Main GUI
--- ====================
 local function createMainGUI()
     local gui = Instance.new("ScreenGui")
     gui.Name = "FunScriptsGUI"
     gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
     local window = Instance.new("Frame")
-    window.Size = UDim2.new(0,420,0,520)
-    window.Position = UDim2.new(0.5,-210,0.5,-260)
+    window.Size = UDim2.new(0, 600, 0, 350) -- wide & horizontal
+    window.Position = UDim2.new(0.5,-300,0.5,-175)
     window.BackgroundColor3 = Color3.fromRGB(45,45,45)
     window.BorderSizePixel = 0
     window.Parent = gui
@@ -138,11 +132,10 @@ local function createMainGUI()
     title.Font=Enum.Font.SourceSansBold
     title.Parent=window
 
-    -- Tabs
     local tabNames = {"Main","Teleport","Movement"}
     local tabs = {}
     local tabBar = Instance.new("Frame")
-    tabBar.Size = UDim2.new(1,0,0,35)
+    tabBar.Size = UDim2.new(1,0,0,40)
     tabBar.Position=UDim2.new(0,0,0,50)
     tabBar.BackgroundTransparency=1
     tabBar.Parent = window
@@ -170,8 +163,8 @@ local function createMainGUI()
         corner.Parent=btn
 
         local frame = Instance.new("Frame")
-        frame.Size = UDim2.new(1,-10,1,-100)
-        frame.Position = UDim2.new(0,5,0,80)
+        frame.Size = UDim2.new(1,-20,1,-100)
+        frame.Position = UDim2.new(0,10,0,90)
         frame.BackgroundTransparency=1
         frame.Parent = window
         frame.Visible=false
@@ -181,7 +174,6 @@ local function createMainGUI()
     end
     selectTab("Main")
 
-    -- Helper Button
     local function createButton(parent,text,posY,callback)
         local btn = Instance.new("TextButton")
         btn.Size = UDim2.new(1,-20,0,40)
@@ -200,9 +192,6 @@ local function createMainGUI()
         btn.MouseButton1Click:Connect(callback)
     end
 
-    -- ====================
-    -- Main Tab
-    -- ====================
     local MainFrame=tabs["Main"].Frame
     local flying=false
     local flyConnection
@@ -261,7 +250,6 @@ local function createMainGUI()
         end
     end)
 
-    -- Visit All Players with loopgoto
     createButton(MainFrame,"Visit All Players",160,function()
         local hrp=LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if not hrp then return end
@@ -279,7 +267,6 @@ local function createMainGUI()
         if currentLoop then currentLoop:Disconnect() end
     end)
 
- 
     local TeleFrame=tabs["Teleport"].Frame
     local function addTeleportButtons()
         TeleFrame:ClearAllChildren()
@@ -329,5 +316,4 @@ local function createMainGUI()
     end)
 end
 
--- Initialize
 showKeySystem(createMainGUI)
