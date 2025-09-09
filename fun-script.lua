@@ -49,4 +49,3 @@ u.InputBegan:Connect(function(i,pr) if i.KeyCode==Enum.KeyCode.K and not pr and 
 end
 
 f(d)
-
