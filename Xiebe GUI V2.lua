@@ -245,9 +245,156 @@ end
 
         print("Button clicked!")
     end
+}) 
+
+local Button = Tab:CreateButton({
+   Name = "Freecam",
+   Callback = function()
+			Press v to activate
+
+
+-- LocalScript (Place inside StarterPlayer -> StarterPlayerScripts)
+
+local player = game.Players.LocalPlayer
+local userInput = game:GetService("UserInputService")
+local rs = game:GetService("RunService")
+local c = workspace.CurrentCamera
+
+local speed = 60
+local selected = false
+local lastUpdate = 0
+
+-- Function to handle player movement
+local function getNextMovement(deltaTime)
+    local nextMove = Vector3.new()
+
+    -- Get the camera's forward and right directions
+    local cameraCFrame = c.CFrame
+    local cameraForward = cameraCFrame.LookVector
+    local cameraRight = cameraCFrame.RightVector
+
+    -- Calculate movement direction based on the camera orientation
+    if userInput:IsKeyDown("W") then
+        nextMove = nextMove + cameraForward
+    elseif userInput:IsKeyDown("S") then
+        nextMove = nextMove - cameraForward
+    end
+
+    if userInput:IsKeyDown("A") then
+        nextMove = nextMove - cameraRight
+    elseif userInput:IsKeyDown("D") then
+        nextMove = nextMove + cameraRight
+    end
+
+    return nextMove * (speed * deltaTime)
+end
+
+-- Function to toggle noclip mode
+local function toggleNoClip()
+    local char = player.Character
+    if char then
+        local humanoid = char:WaitForChild("Humanoid")
+        local root = char:WaitForChild("HumanoidRootPart")
+
+        selected = not selected
+
+        if selected then
+            -- Enable noclip: Disable gravity, disable collisions
+            humanoid.PlatformStand = true
+            root.Anchored = true
+
+            while selected do
+                wait()
+                local delta = tick() - lastUpdate
+                local move = getNextMovement(delta)
+                -- Move the character through objects
+                local pos = root.Position
+                root.CFrame = CFrame.new(pos + move)
+                lastUpdate = tick()
+            end
+
+            humanoid.PlatformStand = false
+            root.Anchored = false
+        end
+    end
+end
+
+-- Detect V key to toggle noclip
+userInput.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.V then
+        toggleNoClip()
+    end
+end)
+end,
 })
 
+local Button = Tab:CreateButton({
+   Name = "Noclip",
+   Callback = function()
+ local ScreenGui = Instance.new("ScreenGui")
+local Toggle = Instance.new("TextButton")
 
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+local Noclip = false
+
+Toggle.Parent = ScreenGui
+Toggle.Size = UDim2.new(0, 200, 0, 50)
+Toggle.Position = UDim2.new(0.5, -100, 0.5, -25)
+Toggle.Text = "Noclip"
+Toggle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+Toggle.TextScaled = true
+Toggle.Active = true
+Toggle.Draggable = true
+
+local function Credits() game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Noclip Gui",
+        Text = "Made By the_king.78",
+        Duration = 12
+    })
+end
+
+local Name = game.Players.LocalPlayer.Name
+
+local function NoclipFunc()
+    Noclip = not Noclip
+
+    if Noclip then
+        Toggle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+
+        game:GetService('RunService').Stepped:Connect(function()
+            if Noclip then
+                for _, b in pairs(game.Workspace:GetChildren()) do
+                    if b.Name == Name then
+                        for _, v in pairs(game.Workspace[Name]:GetChildren()) do
+                            if v:IsA("BasePart") then
+                                v.CanCollide = false
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    else
+        Toggle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+
+        for _, b in pairs(game.Workspace:GetChildren()) do
+            if b.Name == Name then
+                for _, v in pairs(game.Workspace[Name]:GetChildren()) do
+                    if v:IsA("BasePart") then
+                        v.CanCollide = true
+                    end
+                end
+            end
+        end
+    end
+end
+
+Credits()
+Toggle.MouseButton1Click:Connect(NoclipFunc)
+   end,
+})
 -- ==================== Local Player Tab ====================
 local LocalPlayerTab = Window:CreateTab("Main", 4483362458)
 LocalPlayerTab:CreateLabel("Server-Sided & Teleport Controls")
