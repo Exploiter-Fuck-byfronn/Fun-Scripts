@@ -237,17 +237,6 @@ Connection = UserInputService.InputBegan:Connect(function(Key, Typing)
     end
 end)
 
-if not Config.Permanent then
-    Humanoid.Died:Connect(function()
-        Connection:Disconnect()
-    end)
-end
-
-        print("Button clicked!")
-    end
-}) 
-
-local Button = Tab:CreateButton({
 -- ==================== Local Player Tab ====================
 local LocalPlayerTab = Window:CreateTab("Main", 4483362458)
 LocalPlayerTab:CreateLabel("Server-Sided & Teleport Controls")
