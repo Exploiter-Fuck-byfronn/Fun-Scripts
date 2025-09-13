@@ -165,7 +165,7 @@ print("Kaan")
 })
 
 MyTab:CreateButton({
-    Name = "Click Me",       -- text shown on the button
+    Name = "Self fling FE press e to fling yourself and q to TP back",       -- text shown on the button
     Callback = function()
         --[[
 	WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
