@@ -5,7 +5,96 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
+
+-- Fly variables
+local flying = false
+local bodyVelocity = nil
+local bodyGyro = nil
+local flySpeed = 50
+local maxForce = Vector3.new(math.huge, math.huge, math.huge)
+
+-- Function to start flying
+local function startFlying()
+    local character = player.Character
+    if not character then return end
+    local humanoid = character:FindFirstChild("Humanoid")
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoid or not rootPart then return end
+
+    flying = true
+    bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.MaxForce = maxForce
+    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    bodyVelocity.Parent = rootPart
+
+    bodyGyro = Instance.new("BodyGyro")
+    bodyGyro.MaxTorque = maxForce
+    bodyGyro.P = 10000
+    bodyGyro.Parent = rootPart
+
+    humanoid.PlatformStand = true
+end
+
+-- Function to stop flying
+local function stopFlying()
+    flying = false
+    if bodyVelocity then bodyVelocity:Destroy() bodyVelocity = nil end
+    if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
+    local character = player.Character
+    if character then
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid then humanoid.PlatformStand = false end
+    end
+end
+
+-- Fly movement update
+local flyConnection
+local function updateFly()
+    if flyConnection then flyConnection:Disconnect() end
+    flyConnection = RunService.RenderStepped:Connect(function()
+        if not flying then return end
+        local character = player.Character
+        if not character then return end
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        if not rootPart or not bodyVelocity or not bodyGyro then return end
+        local camera = workspace.CurrentCamera
+        local direction = Vector3.new(0, 0, 0)
+
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+            direction = direction + camera.CFrame.LookVector
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+            direction = direction - camera.CFrame.LookVector
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+            direction = direction - camera.CFrame.RightVector
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+            direction = direction + camera.CFrame.RightVector
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+            direction = direction + Vector3.new(0, 1, 0)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            direction = direction - Vector3.new(0, 1, 0)
+        end
+
+        if direction.Magnitude > 0 then
+            bodyVelocity.Velocity = direction.Unit * flySpeed
+        else
+            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        end
+        bodyGyro.CFrame = camera.CFrame
+    end)
+end
+
+-- Handle character reset
+player.CharacterAdded:Connect(function()
+    stopFlying()
+    updateFly()
+end)
 
 -- Create window
 local Window = Rayfield:CreateWindow({
@@ -16,235 +105,151 @@ local Window = Rayfield:CreateWindow({
     Discord = {Enabled = false},
     KeySystem = false
 })
+
 -- Jerk off
-local MyTab = Window:CreateTab("Secondary", 6023426915)
+local MyTab = Window:CreateTab("🚀Secondary🚀", 6023426915)
 
 MyTab:CreateButton({
-    Name = "Jerk off like crazy",       -- text shown on the button
+    Name = "Jerk off like crazy",
     Callback = function()
         local speaker = game.Players.LocalPlayer
-if not speaker then return end
+        if not speaker then return end
 
+        local tool = Instance.new("Tool")
+        tool.Name = "jerk off"
+        tool.ToolTip = "KHEN.CC!"
+        tool.RequiresHandle = false
+        local toolClone = tool:Clone()
+        tool.Parent = speaker:WaitForChild("Backpack")
 
-local tool = Instance.new("Tool")
-tool.Name = "jerk off"
-tool.ToolTip = "Just keep jerking off bruv (CUM TOO)"
-tool.RequiresHandle = false
-local toolClone = tool:Clone()
-tool.Parent = speaker:WaitForChild("Backpack")
+        local jorkin = false
+        local track = nil
+        local nameGui = nil
 
-local jorkin = false
-local track = nil
-local nameGui = nil
-local lastPosition = nil
-
--- Cập nhật humanoid khi nhân vật thay đổi
-local humanoid = speaker.Character and speaker.Character:FindFirstChildWhichIsA("Humanoid")
-local function updateHumanoid()
-    if speaker.Character then
-        humanoid = speaker.Character:WaitForChild("Humanoid")
-    end
-end
-if not humanoid then updateHumanoid() end
-if not humanoid then return end
-
-
-local function stopTomfoolery()
-    jorkin = false
-    if track then
-        track:Stop()
-        track = nil
-    end
-    if nameGui then
-        nameGui:Destroy()
-        nameGui = nil
-    end
-    lastPosition = nil
-end
-
-local function isR15(character)
-    return character:FindFirstChildOfClass("Humanoid").RigType == Enum.HumanoidRigType.R15
-end
-
-local function playAnimation()
-    if not jorkin then return end
-    
-    local isR15Model = isR15(speaker.Character)
-    if not track then
-        local anim = Instance.new("Animation")
-        anim.AnimationId = isR15Model and "rbxassetid://698251653" or "rbxassetid://72042024"
-        
-        local animator = humanoid:FindFirstChildOfClass("Animator") or humanoid:FindFirstChildWhichIsA("AnimationController")
-        if not animator then
-            animator = Instance.new("Animator")
-            animator.Parent = humanoid
+        local humanoid = speaker.Character and speaker.Character:FindFirstChildWhichIsA("Humanoid")
+        local function updateHumanoid()
+            if speaker.Character then
+                humanoid = speaker.Character:WaitForChild("Humanoid")
+            end
         end
-        
-        track = animator:LoadAnimation(anim)
-    end
+        if not humanoid then updateHumanoid() end
+        if not humanoid then return end
 
-    if track then
-        track:Play()
-        track:AdjustSpeed(isR15Model and 0.7 or 0.65)
-        track.TimePosition = 0.6
-        
-        while track and track.IsPlaying and track.TimePosition < (isR15Model and 0.65 or 0.7) do
+        local function stopTomfoolery()
+            jorkin = false
+            if track then
+                track:Stop()
+                track = nil
+            end
+            if nameGui then
+                nameGui:Destroy()
+                nameGui = nil
+            end
+        end
+
+        local function isR15(character)
+            return character:FindFirstChildOfClass("Humanoid").RigType == Enum.HumanoidRigType.R15
+        end
+
+        local function playAnimation()
+            if not jorkin then return end
+
+            local isR15Model = isR15(speaker.Character)
+            if not track then
+                local anim = Instance.new("Animation")
+                anim.AnimationId = isR15Model and "rbxassetid://698251653" or "rbxassetid://72042024"
+
+                local animator = humanoid:FindFirstChildOfClass("Animator") or humanoid:FindFirstChildWhichIsA("AnimationController")
+                if not animator then
+                    animator = Instance.new("Animator")
+                    animator.Parent = humanoid
+                end
+
+                track = animator:LoadAnimation(anim)
+            end
+
+            if track then
+                track:Play()
+                track:AdjustSpeed(isR15Model and 0.7 or 0.65)
+                track.TimePosition = 0.6
+
+                while track and track.IsPlaying and track.TimePosition < (isR15Model and 0.65 or 0.7) do
+                    task.wait(0.1)
+                end
+
+                track:Stop()
+                track = nil
+            end
+        end
+
+        local function showToolName()
+            if not speaker.Character then return end
+            local head = speaker.Character:FindFirstChild("Head")
+            if not head then return end
+
+            nameGui = Instance.new("BillboardGui")
+            nameGui.Parent = head
+            nameGui.Size = UDim2.new(4, 0, 1, 0)
+            nameGui.StudsOffset = Vector3.new(0, 3, 0)
+            nameGui.AlwaysOnTop = true
+
+            local textLabel = Instance.new("TextLabel")
+            textLabel.Parent = nameGui
+            textLabel.Size = UDim2.new(1, 0, 1, 0)
+            textLabel.BackgroundTransparency = 1
+            textLabel.Text = "I'm Horney..."
+            textLabel.TextColor3 = Color3.new(1, 1, 1)
+            textLabel.TextScaled = true
+            textLabel.Font = Enum.Font.GothamBlack
+        end
+
+        speaker.CharacterAdded:Connect(function(character)
+            updateHumanoid()
+            local backpack = speaker:WaitForChild("Backpack")
             task.wait(0.1)
-        end
-        
-        track:Stop()
-        track = nil
-    end
-end
+            if not backpack:FindFirstChild("jerk off") then
+                local newTool = toolClone:Clone()
+                newTool.Parent = backpack
+                newTool.Equipped:Connect(function()
+                    jorkin = true
+                    showToolName()
+                end)
+                newTool.Unequipped:Connect(stopTomfoolery)
+                newTool.Activated:Connect(function()
+                    if jorkin then
+                        playAnimation()
+                    end
+                end)
+            end
+        end)
 
-
-
--- Hiển thị tên tool với font
-local function showToolName()
-    if not speaker.Character then return end
-    local head = speaker.Character:FindFirstChild("Head")
-    if not head then return end
-
-    nameGui = Instance.new("BillboardGui")
-    nameGui.Parent = head
-    nameGui.Size = UDim2.new(4, 0, 1, 0)
-    nameGui.StudsOffset = Vector3.new(0, 3, 0)
-    nameGui.AlwaysOnTop = true
-
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Parent = nameGui
-    textLabel.Size = UDim2.new(1, 0, 1, 0)
-    textLabel.BackgroundTransparency = 1
-    textLabel.Text = "I'm Horney..."
-    textLabel.TextColor3 = Color3.new(1, 1, 1)
-    textLabel.TextScaled = true
-    textLabel.Font = Enum.Font.GothamBlack
-end
-
-speaker.CharacterAdded:Connect(function(character)
-    updateHumanoid()
-    local backpack = speaker:WaitForChild("Backpack")
-    task.wait(0.1)
-    if not backpack:FindFirstChild("jerk off") then
-        local newTool = toolClone:Clone()
-        newTool.Parent = backpack
-        newTool.Equipped:Connect(function()
+        tool.Equipped:Connect(function()
             jorkin = true
             showToolName()
         end)
-        newTool.Unequipped:Connect(stopTomfoolery)
-        newTool.Activated:Connect(function()
+
+        tool.Unequipped:Connect(stopTomfoolery)
+        humanoid.Died:Connect(stopTomfoolery)
+
+        tool.Activated:Connect(function()
             if jorkin then
                 playAnimation()
             end
         end)
-    end
-end)
 
-tool.Equipped:Connect(function()
-    jorkin = true
-    showToolName() 
-end)
-
-tool.Unequipped:Connect(stopTomfoolery)
-humanoid.Died:Connect(stopTomfoolery)
-
-tool.Activated:Connect(function()
-    if jorkin then
-        playAnimation()
-    end
-end)
-
-print("Kaan")
-
-
-
-      
+        print("khen.cc")
         print("Jerking off!!")
     end
 })
 
-MyTab:CreateButton({
-    Name = "Self fling FE press e to fling yourself and q to TP back",       -- text shown on the button
-    Callback = function()
-        --[[
-	WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
-]]
--- FE SELF FLING REAL
--- used for trolling example: bang someone and when they turn around and look at you, FLING YOURSELF
--- hotkey dont have to be capitals lol
--- press e to fling urself and q to go back where u previously were
-
-local Config = {
-    FlingHotkey = "E",
-    TpBackHotkey = "Q",
-    Permanent = false
-}
-
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-
-local Player = Players.LocalPlayer
-
-local Character = Player.Character
-local Humanoid = Character:FindFirstChildWhichIsA("Humanoid")
-local RootPart = Humanoid.RootPart
-
-for _, x in next, Config do
-    if type(x) == "string" then
-        Config[_] = x:upper()
-    end
-end
-
-local CurrentPos
-local Connection
-
-Connection = UserInputService.InputBegan:Connect(function(Key, Typing)
-    if not Typing then
-        if Key.KeyCode == Enum.KeyCode[Config.FlingHotkey] then
-            if Config.Permanent then
-                if Player.Character.Humanoid.RootPart.Velocity.Magnitude <= 20 then
-                    CurrentPos = Player.Character.Humanoid.RootPart.CFrame
-                end
-                Player.Character.Humanoid.RootPart.Velocity = (Player.Character.Humanoid.RootPart.Velocity + Vector3.new(0, 50, 0)) + (Player.Character.Humanoid.RootPart.CFrame.LookVector * 100)
-                Player.Character.Humanoid.RootPart.RotVelocity = (Player.Character.Humanoid.RootPart.RotVelocity + Vector3.new(math.random(200, 300), math.random(-200, 300), math.random(200, 300))) 
-            else
-                if RootPart.Velocity.Magnitude <= 20 then
-                    CurrentPos = RootPart.CFrame
-                end
-                RootPart.Velocity = (RootPart.Velocity + Vector3.new(0, 50, 0)) + (RootPart.CFrame.LookVector * 100)
-                RootPart.RotVelocity = (RootPart.RotVelocity + Vector3.new(math.random(200, 300), math.random(-200, 300), math.random(200, 300)))
-            end
-        elseif Key.KeyCode == Enum.KeyCode[Config.TpBackHotkey] then
-            if CurrentPos then
-                if Config.Permanent then
-                    if Player.Character.Humanoid.RootPart.Velocity.Magnitude >= 20 then
-                        Player.Character.Humanoid.RootPart.Velocity = Vector3.new()
-                        Player.Character.Humanoid.RootPart.RotVelocity = Vector3.new()
-                        Player.Character.Humanoid.RootPart.CFrame = CurrentPos
-                        Player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-                    end
-                else
-                    if RootPart.Velocity.Magnitude >= 20 then
-                        RootPart.Velocity = Vector3.new()
-                        RootPart.RotVelocity = Vector3.new()
-                        RootPart.CFrame = CurrentPos
-                        Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-                    end
-                end
-            end
-        end
-    end
-end)
-
 -- ==================== Local Player Tab ====================
-local LocalPlayerTab = Window:CreateTab("Main", 4483362458)
+local LocalPlayerTab = Window:CreateTab("🚀Main🚀", 4483362458)
 LocalPlayerTab:CreateLabel("Server-Sided & Teleport Controls")
 
 -- WalkSpeed slider
 LocalPlayerTab:CreateSlider({
     Name = "WalkSpeed",
-    Range = {0,500},
+    Range = {0, 500},
     Increment = 1,
     Suffix = "speed",
     CurrentValue = 16,
@@ -259,7 +264,7 @@ LocalPlayerTab:CreateSlider({
 -- JumpPower slider
 LocalPlayerTab:CreateSlider({
     Name = "JumpPower",
-    Range = {0,300},
+    Range = {0, 300},
     Increment = 1,
     Suffix = "power",
     CurrentValue = 50,
@@ -271,26 +276,126 @@ LocalPlayerTab:CreateSlider({
     end
 })
 
+-- Fly Speed slider
+LocalPlayerTab:CreateSlider({
+    Name = "Fly Speed",
+    Range = {10, 200},
+    Increment = 5,
+    Suffix = "speed",
+    CurrentValue = 50,
+    Flag = "FlySpeedSlider",
+    Callback = function(val)
+        flySpeed = val
+    end
+})
+
+-- Fly toggle
+LocalPlayerTab:CreateToggle({
+    Name = "Fly",
+    CurrentValue = false,
+    Flag = "FlyToggle",
+    Callback = function(state)
+        if state then
+            startFlying()
+            updateFly()
+        else
+            stopFlying()
+        end
+    end
+})
+
+-- Infinite Jump toggle
+local infiniteJump = false
+UserInputService.JumpRequest:Connect(function()
+    if infiniteJump and player.Character then
+        local humanoid = player.Character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+LocalPlayerTab:CreateToggle({
+    Name = "Infinite Jump",
+    CurrentValue = false,
+    Flag = "InfiniteJump",
+    Callback = function(state)
+        infiniteJump = state
+    end
+})
+
+-- Noclip toggle
+local noclip = false
+local noclipConnection = nil
+LocalPlayerTab:CreateToggle({
+    Name = "Noclip",
+    CurrentValue = false,
+    Flag = "Noclip",
+    Callback = function(state)
+        noclip = state
+        if noclipConnection then
+            noclipConnection:Disconnect()
+            noclipConnection = nil
+        end
+        if state then
+            noclipConnection = RunService.Stepped:Connect(function()
+                if noclip and player.Character then
+                    for _, part in pairs(player.Character:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                        end
+                    end
+                end
+            end)
+        end
+    end
+})
+
+-- Speed Boost button
+LocalPlayerTab:CreateButton({
+    Name = "Speed Boost (2x for 5s)",
+    Callback = function()
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            local humanoid = player.Character.Humanoid
+            local originalSpeed = humanoid.WalkSpeed
+            humanoid.WalkSpeed = originalSpeed * 2
+            task.wait(5)
+            if humanoid and humanoid.Parent then
+                humanoid.WalkSpeed = originalSpeed
+            end
+        end
+    end
+})
+
 -- Teleport & Hold toggle
 local holding = false
+local teleportConnection
 LocalPlayerTab:CreateToggle({
     Name = "Teleport & Hold",
     CurrentValue = false,
     Flag = "TeleportHold",
     Callback = function(state)
         holding = state
-        spawn(function()
-            while holding do
+        if teleportConnection then
+            teleportConnection:Disconnect()
+            teleportConnection = nil
+        end
+        if state then
+            teleportConnection = RunService.Heartbeat:Connect(function()
                 if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    -- Teleport using HumanoidRootPart
-                    player.Character.HumanoidRootPart.CFrame = CFrame.new(0,5,0)
+                    local rootPart = player.Character.HumanoidRootPart
+                    rootPart.CFrame = CFrame.new(0, 5, 0)
                     workspace.CurrentCamera.CameraType = Enum.CameraType.Scriptable
-                    workspace.CurrentCamera.CFrame = player.Character.HumanoidRootPart.CFrame + Vector3.new(0,5,10)
+                    workspace.CurrentCamera.CFrame = rootPart.CFrame + Vector3.new(0, 5, 10)
                 end
-                wait(7)
+            end)
+        else
+            if teleportConnection then
+                teleportConnection:Disconnect()
+                teleportConnection = nil
             end
             workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
-        end)
+        end
     end
 })
 
@@ -315,7 +420,7 @@ TeleporterTab:CreateButton({
     Name = "Teleport to Origin (0,0,0)",
     Callback = function()
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            player.Character.HumanoidRootPart.CFrame = CFrame.new(0,5,0)
+            player.Character.HumanoidRootPart.CFrame = CFrame.new(0, 5, 0)
         end
     end
 })
@@ -326,7 +431,7 @@ TeleporterTab:CreateButton({
     Callback = function()
         local spawn = workspace:FindFirstChildWhichIsA("SpawnLocation")
         if spawn and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            player.Character.HumanoidRootPart.CFrame = spawn.CFrame + Vector3.new(0,5,0)
+            player.Character.HumanoidRootPart.CFrame = spawn.CFrame + Vector3.new(0, 5, 0)
         end
     end
 })
@@ -357,7 +462,9 @@ TeleporterTab:CreateButton({
         if selectedPlayer then
             local targetPlayer = Players:FindFirstChild(selectedPlayer)
             if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                player.Character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame + Vector3.new(0,3,0)
+                player.Character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
+            else
+                warn("Target player not found or invalid!")
             end
         else
             warn("No player selected!")
@@ -373,17 +480,62 @@ Players.PlayerRemoving:Connect(function(plr)
     if dropdown.Options then
         for i, name in pairs(dropdown.Options) do
             if name == plr.Name then
-                table.remove(dropdown.Options,i)
+                table.remove(dropdown.Options, i)
                 if selectedPlayer == plr.Name then selectedPlayer = nil end
                 break
             end
         end
+        dropdown:RefreshOptions()
     end
 end)
 
 -- ==================== Combat Tab ====================
-local CombatTab = Window:CreateTab("Combat", 4483362458)
+local CombatTab = Window:CreateTab("🚀Combat🚀", 4483362458)
 CombatTab:CreateLabel("Combat features")
+
+-- AutoClick variables
+local autoClick = false
+local cps = 10
+local autoClickConnection = nil
+
+-- AutoClick toggle
+CombatTab:CreateToggle({
+    Name = "AutoClick",
+    CurrentValue = false,
+    Flag = "AutoClick",
+    Callback = function(state)
+        autoClick = state
+        if autoClickConnection then
+            autoClickConnection:Disconnect()
+            autoClickConnection = nil
+        end
+        if state then
+            autoClickConnection = RunService.Heartbeat:Connect(function()
+                local character = player.Character
+                if character then
+                    local tool = character:FindFirstChildOfClass("Tool")
+                    if tool then
+                        tool:Activate()
+                    end
+                end
+                task.wait(1 / cps)
+            end)
+        end
+    end
+})
+
+-- CPS slider for AutoClick
+CombatTab:CreateSlider({
+    Name = "Clicks Per Second",
+    Range = {1, 50},
+    Increment = 1,
+    Suffix = "CPS",
+    CurrentValue = 10,
+    Flag = "CPS",
+    Callback = function(val)
+        cps = val
+    end
+})
 
 CombatTab:CreateToggle({
     Name = "Infinite Attack",
@@ -396,13 +548,68 @@ CombatTab:CreateToggle({
 
 CombatTab:CreateSlider({
     Name = "Attack Speed",
-    Range = {1,10},
+    Range = {1, 10},
     Increment = 0.1,
     Suffix = "x",
     CurrentValue = 1,
     Flag = "AttackSpeed",
     Callback = function(val)
         print("Attack Speed set to:", val)
+    end
+})
+
+-- Aimbot variables
+local aimbot = false
+local aimFov = 200
+local aimbotConnection = nil
+
+-- Aimbot FOV slider
+CombatTab:CreateSlider({
+    Name = "Aimbot FOV",
+    Range = {50, 500},
+    Increment = 10,
+    Suffix = "pixels",
+    CurrentValue = 200,
+    Flag = "AimbotFOV",
+    Callback = function(val)
+        aimFov = val
+    end
+})
+
+-- Aimbot toggle
+CombatTab:CreateToggle({
+    Name = "Aimbot",
+    CurrentValue = false,
+    Flag = "Aimbot",
+    Callback = function(state)
+        aimbot = state
+        if aimbotConnection then
+            aimbotConnection:Disconnect()
+            aimbotConnection = nil
+        end
+        if state then
+            aimbotConnection = RunService.RenderStepped:Connect(function()
+                local closest = nil
+                local minDist = math.huge
+                local camera = workspace.CurrentCamera
+                for _, plr in pairs(Players:GetPlayers()) do
+                    if plr ~= player and plr.Character and plr.Character:FindFirstChild("Head") and plr.Character.Humanoid.Health > 0 then
+                        local head = plr.Character.Head
+                        local screenPos, onScreen = camera:WorldToViewportPoint(head.Position)
+                        if onScreen then
+                            local dist = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2)).Magnitude
+                            if dist < aimFov and dist < minDist then
+                                minDist = dist
+                                closest = head
+                            end
+                        end
+                    end
+                end
+                if closest then
+                    camera.CFrame = CFrame.lookAt(camera.CFrame.Position, closest.Position)
+                end
+            end)
+        end
     end
 })
 
@@ -423,8 +630,8 @@ VisualsTab:CreateToggle({
                     if not highlight then
                         highlight = Instance.new("Highlight")
                         highlight.Parent = plr.Character
-                        highlight.FillColor = Color3.fromRGB(255,0,0)
-                        highlight.OutlineColor = Color3.fromRGB(0,0,0)
+                        highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                        highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
                     end
                 else
                     if highlight then highlight:Destroy() end
@@ -434,10 +641,93 @@ VisualsTab:CreateToggle({
     end
 })
 
+-- ESP Names
+local espNames = {}
+VisualsTab:CreateToggle({
+    Name = "ESP Names",
+    CurrentValue = false,
+    Flag = "ESPNames",
+    Callback = function(state)
+        for _, plr in pairs(Players:GetPlayers()) do
+            if plr ~= player and plr.Character and plr.Character:FindFirstChild("Head") then
+                local head = plr.Character.Head
+                local gui = espNames[plr]
+                if state then
+                    if not gui then
+                        gui = Instance.new("BillboardGui")
+                        gui.Name = "ESPName"
+                        gui.Parent = head
+                        gui.Size = UDim2.new(4, 0, 1, 0)
+                        gui.StudsOffset = Vector3.new(0, 3, 0)
+                        gui.AlwaysOnTop = true
+                        local textLabel = Instance.new("TextLabel")
+                        textLabel.Parent = gui
+                        textLabel.Size = UDim2.new(1, 0, 1, 0)
+                        textLabel.BackgroundTransparency = 1
+                        textLabel.Text = plr.Name
+                        textLabel.TextColor3 = Color3.new(1, 1, 1)
+                        textLabel.TextScaled = true
+                        textLabel.Font = Enum.Font.Gotham
+                        espNames[plr] = gui
+                    end
+                else
+                    if gui then
+                        gui:Destroy()
+                        espNames[plr] = nil
+                    end
+                end
+            end
+        end
+    end
+})
+
+Players.PlayerAdded:Connect(function(plr)
+    if plr ~= player and VisualsTab:GetFlag("ESPNames") then
+        plr.CharacterAdded:Connect(function(char)
+            local head = char:WaitForChild("Head")
+            local gui = Instance.new("BillboardGui")
+            gui.Name = "ESPName"
+            gui.Parent = head
+            gui.Size = UDim2.new(4, 0, 1, 0)
+            gui.StudsOffset = Vector3.new(0, 3, 0)
+            gui.AlwaysOnTop = true
+            local textLabel = Instance.new("TextLabel")
+            textLabel.Parent = gui
+            textLabel.Size = UDim2.new(1, 0, 1, 0)
+            textLabel.BackgroundTransparency = 1
+            textLabel.Text = plr.Name
+            textLabel.TextColor3 = Color3.new(1, 1, 1)
+            textLabel.TextScaled = true
+            textLabel.Font = Enum.Font.Gotham
+            espNames[plr] = gui
+        end)
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+    if espNames[plr] then
+        espNames[plr]:Destroy()
+        espNames[plr] = nil
+    end
+end)
+
+-- FOV Slider
+VisualsTab:CreateSlider({
+    Name = "Field of View",
+    Range = {30, 120},
+    Increment = 1,
+    Suffix = "degrees",
+    CurrentValue = workspace.CurrentCamera.FieldOfView,
+    Flag = "FOVSlider",
+    Callback = function(val)
+        workspace.CurrentCamera.FieldOfView = val
+    end
+})
+
 -- Background color picker
 VisualsTab:CreateColorPicker({
     Name = "Background Color",
-    Default = Color3.fromRGB(50,50,50),
+    Default = Color3.fromRGB(50, 50, 50),
     Flag = "BackgroundColor",
     Callback = function(color)
         if Window.MainFrame then
@@ -452,7 +742,7 @@ WorldTab:CreateLabel("World manipulation")
 
 WorldTab:CreateSlider({
     Name = "Gravity",
-    Range = {0,500},
+    Range = {0, 500},
     Increment = 1,
     Suffix = "studs",
     CurrentValue = workspace.Gravity,
@@ -464,10 +754,10 @@ WorldTab:CreateSlider({
 
 WorldTab:CreateSlider({
     Name = "Time of Day",
-    Range = {0,24},
+    Range = {0, 24},
     Increment = 0.1,
     Suffix = "hours",
-    CurrentValue = tonumber(game.Lighting.TimeOfDay:sub(1,2)),
+    CurrentValue = tonumber(game.Lighting.TimeOfDay:sub(1, 2)),
     Flag = "TimeSlider",
     Callback = function(val)
         game.Lighting.TimeOfDay = tostring(val)
